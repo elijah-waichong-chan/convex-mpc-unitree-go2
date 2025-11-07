@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import mujoco as mj
+from go2_model import Pin_Go2_Model
 
 def pd_controller_static(mujoco_go2, leg: str):
 
@@ -69,6 +70,13 @@ def make_swing_trajectory(p0, pf, t_swing, h_sw=0.0):
         return p, v, a
 
     return eval_at
+
+def swing_leg_controller(go2: Pin_Go2_Model, ):
+
+    current_state = go2.current_config.get_simplified_full_state()
+
+    current_contact = 
+    
 
 
 

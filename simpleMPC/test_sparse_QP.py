@@ -13,8 +13,7 @@ dt = 0.03125
 
 traj.generateConstantTraj(go2, x_vel_des=0.5, y_vel_des=0.2, z_pos_des=0.27, yaw_rate_des=0, 
                           t0=0, time_step=dt, time_horizon=0.5, frequency=2, duty=0.5)
-dynamics.continuousDynamics(go2, traj)
-dynamics.discreteDynamics(dt)
+dynamics.update_dynamics(go2, traj, dt)
 
 # 2) Build an empty QP solver object
 mpc = Locomotion_MPC(dynamics, traj)

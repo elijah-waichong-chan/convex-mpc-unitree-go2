@@ -2,14 +2,37 @@ import casadi as ca
 import numpy as np
 import scipy.sparse as sp
 from dynamics import Dynamics
-from simpleMPC.reference_trajectory import RigidBodyTraj
+from reference_trajectory import Reference_Traj
 import time
 
 class Locomotion_MPC:
-    def __init__(self, dynamics: Dynamics, traj: RigidBodyTraj):
-        self.build_QP(dynamics, traj)
+    def __init__(self, dynamics: Dynamics, traj: Reference_Traj):
+        self._build_QP(dynamics, traj)
 
-    def build_sparse_matrix(self, dynamics: Dynamics, traj: RigidBodyTraj):
+    def solve_QP(self, dynamics: Dynamics, traj: Reference_Traj):
+
+        t0 = time.perf_counter()
+        # Get the latesting QP Matrcies
+        [H, g, A, lba, uba] = self._build_sparse_matrix(dynamics, traj)
+        # Compute Bounds
+        [lbx, ubx] = self._compute_bounds(traj)
+        t1 = time.perf_counter()
+        t_compute = t1 - t0
+
+        # Solve the QP
+        t0 = time.perf_counter()
+        sol = self.solver(h=H, g=g, a=A, lba=lba, uba=uba, lbx=lbx, ubx=ubx)
+        t1 = time.perf_counter()
+        t_solve = t1 - t0
+        st = self.solver.stats()
+        print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
+        print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
+        print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
+        print(f"[QP SOLVER] status: {st.get('return_status')}")
+
+        return sol
+
+    def _build_sparse_matrix(self, dynamics: Dynamics, traj: Reference_Traj):
 
         # 0) Start build time timer
         t0 = time.perf_counter()
@@ -174,7 +197,7 @@ class Locomotion_MPC:
         return H, g, A_dm, l_dm, u_dm
 
 
-    def build_QP(self, dynamics: Dynamics, traj: RigidBodyTraj):
+    def _build_QP(self, dynamics: Dynamics, traj: Reference_Traj):
 
         # This function builds a Quadratic Program solver with sparsity structure only.
         # Subsequent update of the matries are necessary to run the optimization.
@@ -184,7 +207,7 @@ class Locomotion_MPC:
 
         # 1) Build the Hessian H matrix, linear term g vector, constraint A matrix
         # and constraint bounds lba, uba vectors
-        [H, g, A, lba, uba] = self.build_sparse_matrix(dynamics, traj)
+        [H, g, A, lba, uba] = self._build_sparse_matrix(dynamics, traj)
 
         # 2) Create a sparsity QP solver with the H, A sparsity structure
         # Define the QP structure
@@ -203,7 +226,7 @@ class Locomotion_MPC:
         print(f"[QP BUILDER] Sparsity: nnz(H) = {H.nnz()}, nnz(A) = {A.nnz()}\n")
 
 
-    def compute_bounds(self, traj: RigidBodyTraj):
+    def _compute_bounds(self, traj: Reference_Traj):
 
         fz_min = 10
         N = traj.N
@@ -256,32 +279,3 @@ class Locomotion_MPC:
         ubx = ca.DM(ubx_np)
 
         return lbx, ubx
-
-
-
-    def solve_QP(self, dynamics: Dynamics, traj: RigidBodyTraj):
-
-        t0 = time.perf_counter()
-        # Get the latesting QP Matrcies
-        [H, g, A, lba, uba] = self.build_sparse_matrix(dynamics, traj)
-        # Compute Bounds
-        [lbx, ubx] = self.compute_bounds(traj)
-        t1 = time.perf_counter()
-        t_compute = t1 - t0
-
-        # Solve the QP
-        t0 = time.perf_counter()
-        sol = self.solver(h=H, g=g, a=A, lba=lba, uba=uba, lbx=lbx, ubx=ubx)
-        t1 = time.perf_counter()
-        t_solve = t1 - t0
-        st = self.solver.stats()
-        print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
-        print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
-        print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
-        print(f"[QP SOLVER] status: {st.get('return_status')}")
-
-        return sol
-
-
-
-
