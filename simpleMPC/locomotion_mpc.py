@@ -1,19 +1,24 @@
 import casadi as ca
 import numpy as np
 import scipy.sparse as sp
-from dynamics import Dynamics
-from reference_trajectory import Reference_Traj
+from reference_trajectory import ReferenceTraj
+from go2_robot_data import PinGo2Model
 import time
 
 class Locomotion_MPC:
-    def __init__(self, dynamics: Dynamics, traj: Reference_Traj):
-        self._build_QP(dynamics, traj)
+    def __init__(self, go2:PinGo2Model, traj: ReferenceTraj):
+        self.mu = 0.7
+        self._build_QP(go2, traj)
+        self.prev_x   = None          # shape: (n_w, 1)
+        self.prev_lam_a = None          # shape: (n_constraints, 1)
+        self.prev_lam_x = None          # shape: (n_constraints, 1)
+        self.solve_time = 0
 
-    def solve_QP(self, dynamics: Dynamics, traj: Reference_Traj):
+    def solve_QP(self, go2:PinGo2Model, traj: ReferenceTraj):
 
         t0 = time.perf_counter()
         # Get the latesting QP Matrcies
-        [H, g, A, lba, uba] = self._build_sparse_matrix(dynamics, traj)
+        [g, A, lba, uba] = self._update_sparse_matrix(go2, traj)
         # Compute Bounds
         [lbx, ubx] = self._compute_bounds(traj)
         t1 = time.perf_counter()
@@ -21,39 +26,40 @@ class Locomotion_MPC:
 
         # Solve the QP
         t0 = time.perf_counter()
-        sol = self.solver(h=H, g=g, a=A, lba=lba, uba=uba, lbx=lbx, ubx=ubx)
+        sol = self.solver(h=self.H_const, g=g, a=A, lba=lba, uba=uba, lbx=lbx, ubx=ubx)
+
         t1 = time.perf_counter()
         t_solve = t1 - t0
         st = self.solver.stats()
-        print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
-        print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
-        print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
-        print(f"[QP SOLVER] status: {st.get('return_status')}")
+
+        self.solve_time = (t_compute + t_solve)*1e3
+
+        # print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
+        # print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
+        # print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
+        # print(f"[QP SOLVER] status: {st.get('return_status')}")
 
         return sol
 
-    def _build_sparse_matrix(self, dynamics: Dynamics, traj: Reference_Traj):
+    def _build_sparse_matrix(self, go2:PinGo2Model, traj: ReferenceTraj):
 
         # 0) Start build time timer
         t0 = time.perf_counter()
 
         # 1) System Constants
         nx, nu = 12, 12 # State and Input size
-        N = dynamics.N # Prediction horizon
+        N = traj.N # Prediction horizon
         nvars = N*nx + N*nu # Total number of decision variables
-        mu = 0.7 # Static Coefficient
-        Q = np.diag([1, 1, 50,  1, 1, 1,  1, 1, 1,  1, 1, 1]) # State cost weight matrix
-        R = np.diag([1e-6] * nu) # Input cost weight matrix
-        contact = traj.contact_schedule  # (4,N) Contact schedule mask
+        mu = self.mu # Static Coefficient
+        self.Q = np.diag([1, 1, 200,  50, 50, 1,  10, 10, 1,  1, 1, 1]) # State cost weight matrix
+        self.R = np.diag([1e-6] * nu) # Input cost weight matrix
+        contact_table = traj.contact_table  # (4,N) Contact schedule mask
 
         # 2) Extract Dynamics for the horizon
-        Ad = np.asarray(dynamics.Ad)
-        Bd = np.asarray(dynamics.Bd) 
-        gd = np.asarray(dynamics.gd).reshape(nx,1)
-        x0 = traj.initial_simplified_state.compute_x_vec().reshape(nx,1)
-
-        # 3) Extract Reference Trajectory Vector (12xN)
-        x_ref_traj = traj.compute_x_ref_vec()
+        Ad = np.asarray(go2.Ad)
+        Bd = np.asarray(go2.Bd) 
+        gd = np.asarray(go2.gd).reshape(nx,1)
+        x0 = go2.compute_com_x_vec()
 
         # 4) Build the Hessian H for the QP
         rows, cols, vals = [], [], []
@@ -68,30 +74,17 @@ class Locomotion_MPC:
         for k in range(N):
             base = k*nx
             for i in range(nx):
-                if Q[i,i] != 0:
-                    add(base+i, base+i, 2*Q[i,i])
+                if self.Q[i,i] != 0:
+                    add(base+i, base+i, 2*self.Q[i,i])
 
         # U blocks: k=0..N-1
         for k in range(N):
             base = N*nx + k*nu
             for i in range(nu):
-                if R[i,i] != 0:
-                    add(base+i, base+i, 2*R[i,i])
+                if self.R[i,i] != 0:
+                    add(base+i, base+i, 2*self.R[i,i])
 
         H = ca.DM.triplet(rows, cols, ca.DM(vals), nvars, nvars)
-
-
-        # 5) Build the linear term (reference cost offset) vector g for the QP
-        gx_blocks = []
-
-        # X block: k=0..N-1
-        for k in range(N):
-            gx_blocks.append(-2 * ca.DM(Q) @ x_ref_traj[:, k])
-        gx = ca.vertcat(*gx_blocks)
-
-        # U block: k=0..N-1
-        gu = ca.DM.zeros(nu * N, 1)
-        g  = ca.vertcat(gx, gu)
 
         # 6) Build the constraints matrix A for the QP
         # Using Scipy for efficient construction
@@ -121,45 +114,141 @@ class Locomotion_MPC:
 
         baseU = N*nx
         r0 = 0
+        M = 1e6  # pick something safely larger than any expected force
         # Building the inequality matrix
         for k in range(N):
             uk0 = baseU + k*nu
             for leg in range(4):
 
-                if contact[leg, k] != 1: 
-                    continue
+                c = 1 if contact_table[leg, k] == 1 else 0
                 fx, fy, fz = leg_cols(leg)
 
-                # fx - mu fz <= 0
-                rows += [r0, r0]
-                cols += [uk0+fx, uk0+fz]
-                vals += [1.0, -mu]
-                l_ineq += [-np.inf]
-                u_ineq += [0.0]
-                r0 += 1
+                # fx - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fx, uk0+fz]; vals += [1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
 
-                # -fx - mu fz <= 0
-                rows += [r0, r0]
-                cols += [uk0+fx, uk0+fz]
-                vals += [-1.0, -mu]
-                l_ineq += [-np.inf]
-                u_ineq += [0.0]
-                r0 += 1
+                # -fx - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fx, uk0+fz]; vals += [-1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
 
-                # fy - mu fz <= 0
-                rows += [r0, r0]
-                cols += [uk0+fy, uk0+fz]
-                vals += [1.0, -mu]
-                l_ineq += [-np.inf]
-                u_ineq += [0.0]
-                r0 += 1
-                # -fy - mu fz <= 0
-                rows += [r0, r0]
-                cols += [uk0+fy, uk0+fz]
-                vals += [-1.0, -mu]
-                l_ineq += [-np.inf]
-                u_ineq += [0.0]
-                r0 += 1
+                # fy - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fy, uk0+fz]; vals += [1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
+
+                # -fy - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fy, uk0+fz]; vals += [-1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
+
+        # The inequality matrix which multiply with decision variables
+        Aineq = sp.csc_matrix((vals, (rows, cols)), shape=(r0, N*(nx+nu)))
+
+        # 6.3) Stack equalities + inequalities together
+        # The final constraint A matrix
+        A = sp.vstack([Aeq, Aineq], format='csc')
+
+        # 6.4) Convert SciPy to CasADi matrix
+        # helper function
+        def scipy_to_casadi_csc(M):
+            M = M.tocsc()
+            spz = ca.Sparsity(M.shape[0], M.shape[1], M.indptr.tolist(), M.indices.tolist())
+            return ca.DM(spz, M.data)
+
+        # CasAdi constraint A matrix
+        A_dm = scipy_to_casadi_csc(A)
+
+        # 7) Stop the build timer
+        t1 = time.perf_counter()
+        t_build = t1 - t0
+
+        # 8) Print the time used
+        # print(f"[MATRIX BUILDER] duration = {t_build*1e3:.3f} ms")
+
+        return H, A_dm
+    
+    def _update_sparse_matrix(self, go2:PinGo2Model, traj: ReferenceTraj):
+
+        # 0) Start build time timer
+        t0 = time.perf_counter()
+
+        # 1) System Constants
+        nx, nu = 12, 12 # State and Input size
+        N = traj.N # Prediction horizon
+        mu = self.mu # Static Coefficient
+        contact_table = traj.contact_table  # (4,N) Contact schedule mask
+
+        # 2) Extract Dynamics for the horizon
+        Ad = np.asarray(go2.Ad)
+        Bd = np.asarray(go2.Bd) 
+        gd = np.asarray(go2.gd).reshape(nx,1)
+        x0 = go2.compute_com_x_vec()
+
+        # 3) Extract Reference Trajectory Vector (12xN)
+        x_ref_traj = traj.compute_x_ref_vec()
+
+        # 4) Build the linear term (reference cost offset) vector g for the QP
+        gx_blocks = []
+
+        # X block: k=0..N-1
+        for k in range(N):
+            gx_blocks.append(-2 * ca.DM(self.Q) @ x_ref_traj[:, k])
+        gx = ca.vertcat(*gx_blocks)
+
+        # U block: k=0..N-1
+        gu = ca.DM.zeros(nu * N, 1)
+        g  = ca.vertcat(gx, gu)
+
+        # 5) Build the constraints matrix A for the QP
+        # Using Scipy for efficient construction
+        I_n = sp.eye(nx, format='csc') # Identity matrix (12 x 12)
+        I_N = sp.eye(N,  format='csc') # Identity matrix (N x N)
+        S   = sp.diags([np.ones(N-1)], [-1], shape=(N,N), format='csc') # Matrix with ones only in the lower diagonal half
+
+        # 6.1) Dynamics Constraints
+        # Dynamics - X block (multiply with Ad)
+        AX = sp.kron(I_N, I_n, format='csc') + sp.kron(S, -Ad, format='csc')
+        # Dynamics - U block (muktiply with Bd)
+        AU = sp.block_diag([ -sp.csc_matrix(Bd[k]) for k in range(N) ], format='csc')
+
+        # Form the Dynamics Constaints as 
+            # x_k+1 - g_d = Ad*x_k + B_d*u_k
+        # LHS matrix of the equality that multiply with decision variables
+        Aeq = sp.hstack([AX, AU], format='csc')
+        # RHS vector of the equality (first row is special because of initial condition)
+        beq = np.vstack([Ad @ x0 + gd] + [gd]*(N-1)).ravel()
+
+        # 6.2) Friction Constraints
+        rows, cols, vals = [], [], []
+        l_ineq, u_ineq = [], []
+
+        # helper function to index contact forces for each leg
+        def leg_cols(leg): return 3*leg+0, 3*leg+1, 3*leg+2
+
+        baseU = N*nx
+        r0 = 0
+        M = 1e6  # pick something safely larger than any expected force
+        # Building the inequality matrix
+        for k in range(N):
+            uk0 = baseU + k*nu
+            for leg in range(4):
+
+                c = 1 if contact_table[leg, k] == 1 else 0
+                fx, fy, fz = leg_cols(leg)
+
+                # fx - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fx, uk0+fz]; vals += [1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
+
+                # -fx - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fx, uk0+fz]; vals += [-1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
+
+                # fy - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fy, uk0+fz]; vals += [1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
+
+                # -fy - mu fz <= M*(1-c)
+                rows += [r0, r0]; cols += [uk0+fy, uk0+fz]; vals += [-1.0, -mu]
+                l_ineq += [-np.inf]; u_ineq += [M*(1-c)]; r0 += 1
 
         # The inequality matrix which multiply with decision variables
         Aineq = sp.csc_matrix((vals, (rows, cols)), shape=(r0, N*(nx+nu)))
@@ -183,6 +272,7 @@ class Locomotion_MPC:
 
         # CasAdi constraint A matrix
         A_dm = scipy_to_casadi_csc(A)
+
         # CasAdi constraint upper bound and lower bound
         l_dm = ca.DM(lb)
         u_dm = ca.DM(ub)
@@ -192,12 +282,12 @@ class Locomotion_MPC:
         t_build = t1 - t0
 
         # 8) Print the time used
-        print(f"[MATRIX BUILDER] duration = {t_build*1e3:.3f} ms  ({1.0/t_build:.1f} Hz)")
+        # print(f"[MATRIX BUILDER] duration = {t_build*1e3:.3f} ms")
 
-        return H, g, A_dm, l_dm, u_dm
+        return g, A_dm, l_dm, u_dm
 
 
-    def _build_QP(self, dynamics: Dynamics, traj: Reference_Traj):
+    def _build_QP(self, go2:PinGo2Model, traj: ReferenceTraj):
 
         # This function builds a Quadratic Program solver with sparsity structure only.
         # Subsequent update of the matries are necessary to run the optimization.
@@ -207,13 +297,33 @@ class Locomotion_MPC:
 
         # 1) Build the Hessian H matrix, linear term g vector, constraint A matrix
         # and constraint bounds lba, uba vectors
-        [H, g, A, lba, uba] = self._build_sparse_matrix(dynamics, traj)
+        [H0, A0] = self._build_sparse_matrix(go2, traj)
+
+        # Store sparsities
+        self.H_sp = H0.sparsity()
+        self.A_sp = A0.sparsity()
+
+        # Optionally keep an initial H if it is constant (it is in your case)
+        self.H_const = H0
 
         # 2) Create a sparsity QP solver with the H, A sparsity structure
         # Define the QP structure
-        qp = {'h': H.sparsity(), 'a': A.sparsity()}
+        qp = {'h': self.H_sp, 'a': self.A_sp}
         # Build the solver with a desired solver option (ipqp used here)
-        self.solver = ca.conic('S', 'ipqp', qp)
+
+        opts = {
+            "osqp": {
+                "eps_abs": 1e-5,
+                "eps_rel": 1e-5,
+                "max_iter": 10000,
+                "polish": False,
+                "verbose": True,
+                "scaling": 10,
+                "scaled_termination": True
+            }
+        }
+        self.solver = ca.conic('S', 'osqp', qp, opts)
+        # self.solver = ca.conic('S', 'qrqp', qp, {"print_iter": False})
 
         # 3) Stop the build timer
         t1 = time.perf_counter()
@@ -222,11 +332,11 @@ class Locomotion_MPC:
         # 4) Print Summary
         print("[QP BUILDER] ✅ QP solver built successfully.")
         print(f"[QP BUILDER] duration = {t_build*1e3:.3f} ms  ({1.0/t_build:.1f} Hz)")
-        print(f"[QP BUILDER] Dimensions: #Decision Variables = {H.size1()}, #Constraints = {A.size1()}")
-        print(f"[QP BUILDER] Sparsity: nnz(H) = {H.nnz()}, nnz(A) = {A.nnz()}\n")
+        print(f"[QP BUILDER] Dimensions: #Decision Variables = {H0.size1()}, #Constraints = {A0.size1()}")
+        print(f"[QP BUILDER] Sparsity: nnz(H) = {H0.nnz()}, nnz(A) = {A0.nnz()}\n")
 
 
-    def _compute_bounds(self, traj: Reference_Traj):
+    def _compute_bounds(self, traj: ReferenceTraj):
 
         fz_min = 10
         N = traj.N
@@ -244,7 +354,7 @@ class Locomotion_MPC:
         force_idx   = start_u + force_block                                # (12, N)
 
         # 3) Contact mask
-        contact = np.asarray(traj.contact_schedule, dtype=bool)  # (4, N); True=stance, False=swing
+        contact = np.asarray(traj.contact_table, dtype=bool)  # (4, N); True=stance, False=swing
 
         # Indices for each leg's (x,y,z) rows within the 12 rows
         leg_rows = np.array([[0, 1, 2],
