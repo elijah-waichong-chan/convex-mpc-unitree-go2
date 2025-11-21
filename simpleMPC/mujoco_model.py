@@ -3,6 +3,7 @@ import mujoco.viewer
 import numpy as np
 from pathlib import Path
 import time
+from go2_robot_data import PinGo2Model
 
 class MuJoCo_GO2_Model:
     def __init__(self):
@@ -14,6 +15,8 @@ class MuJoCo_GO2_Model:
         self.model = mj.MjModel.from_xml_path(str(scene_path))
         self.data = mj.MjData(self.model)
         self.viewer = None
+
+        self.base_bid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "base_link")
 
     def update_with_q_pin(self, q_pin):
         px, py, pz, qx, qy, qz, qw, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12 = q_pin[:]
@@ -112,6 +115,21 @@ class MuJoCo_GO2_Model:
                 next_t = time.perf_counter()
 
             i += 1
+
+    def update_pin_with_mujoco(self, go2:PinGo2Model):
+
+        mujoco_q  = np.asarray(self.data.qpos, dtype=float).reshape(-1)   # (19,)
+        mujoco_dq = np.asarray(self.data.qvel, dtype=float).reshape(-1)   # (18,)
+        qw, qx, qy, qz = mujoco_q[3:7]
+
+        # Convert to Pin
+        q  = np.concatenate([mujoco_q[0:3], [qx, qy, qz, qw], mujoco_q[7:]])
+        dq = mujoco_dq
+
+        go2.update_model(q, dq)
+
+
+
 
 
 
