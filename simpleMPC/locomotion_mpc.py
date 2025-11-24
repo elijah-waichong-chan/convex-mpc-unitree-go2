@@ -7,59 +7,49 @@ import time
 
 class Locomotion_MPC:
     def __init__(self, go2:PinGo2Model, traj: ReferenceTraj):
-        self.mu = 0.7
-        self._build_QP(go2, traj)
-        self.prev_x   = None          # shape: (n_w, 1)
-        self.prev_lam_a = None          # shape: (n_constraints, 1)
-        self.prev_lam_x = None          # shape: (n_constraints, 1)
+        self.mu = 0.7                                                   # Friction coefficient
+        self.nx, self.nu = 12, 12                                       # State and Input size
+        self.N = traj.N                                                 # Prediction horizon
+        self.nvars = self.N * self.nx + self.N * self.nu                # Total number of decision variables
+        self.Q = np.diag([1, 1, 50,  5, 5, 1,  1, 1, 1,  1, 1, 1])      # State cost weight matrix
+        self.R = np.diag([1e-6] * 12)                                   # Input cost weight matrix
         self.solve_time = 0
+        self._build_QP(go2, traj)
 
-    def solve_QP(self, go2:PinGo2Model, traj: ReferenceTraj):
+    def solve_QP(self, go2:PinGo2Model, traj: ReferenceTraj, verbose: bool = False):
 
         t0 = time.perf_counter()
-        # Get the latesting QP Matrcies
-        [g, A, lba, uba] = self._update_sparse_matrix(go2, traj)
-        # Compute Bounds
-        [lbx, ubx] = self._compute_bounds(traj)
-        t1 = time.perf_counter()
-        t_compute = t1 - t0
-
+        # Update the QP
+        [g, A, lba, uba] = self._update_sparse_matrix(go2, traj)        # compute QP Matrcies
+        [lbx, ubx] = self._compute_bounds(traj)                         # Compute Bounds
+        t_compute = time.perf_counter() - t0
         # Solve the QP
-        t0 = time.perf_counter()
         sol = self.solver(h=self.H_const, g=g, a=A, lba=lba, uba=uba, lbx=lbx, ubx=ubx)
 
-        t1 = time.perf_counter()
-        t_solve = t1 - t0
-        st = self.solver.stats()
+        # Log the duration
+        t_solve = time.perf_counter() - t_compute - t0
+        self.solve_time = (t_compute + t_solve) * 1e3
 
-        self.solve_time = (t_compute + t_solve)*1e3
-
-        # print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
-        # print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
-        # print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
-        # print(f"[QP SOLVER] status: {st.get('return_status')}")
-
+        if verbose:
+            stats = self.solver.stats()
+            print(f"[QP SOLVER] update matrix takes {t_compute*1e3:.3f} ms")
+            print(f"[QP SOLVER] solver takes {t_solve*1e3:.3f} ms")
+            print(f"[QP SOLVER] total time = {(t_compute + t_solve)*1e3:.3f} ms  ({1.0/(t_compute + t_solve):.1f} Hz)")
+            print(f"[QP SOLVER] status: {stats.get('return_status')}")
         return sol
 
     def _build_sparse_matrix(self, go2:PinGo2Model, traj: ReferenceTraj):
 
-        # 0) Start build time timer
-        t0 = time.perf_counter()
-
         # 1) System Constants
-        nx, nu = 12, 12 # State and Input size
-        N = traj.N # Prediction horizon
-        nvars = N*nx + N*nu # Total number of decision variables
-        mu = self.mu # Static Coefficient
-        self.Q = np.diag([1, 1, 200,  50, 50, 1,  10, 10, 1,  1, 1, 1]) # State cost weight matrix
-        self.R = np.diag([1e-6] * nu) # Input cost weight matrix
+        nx, nu = self.nx, self.nu
+        N = self.N
+        nvars = self.nvars
+        mu = self.mu
         contact_table = traj.contact_table  # (4,N) Contact schedule mask
 
         # 2) Extract Dynamics for the horizon
         Ad = np.asarray(go2.Ad)
         Bd = np.asarray(go2.Bd) 
-        gd = np.asarray(go2.gd).reshape(nx,1)
-        x0 = go2.compute_com_x_vec()
 
         # 4) Build the Hessian H for the QP
         rows, cols, vals = [], [], []
@@ -102,8 +92,6 @@ class Locomotion_MPC:
             # x_k+1 - g_d = Ad*x_k + B_d*u_k
         # LHS matrix of the equality that multiply with decision variables
         Aeq = sp.hstack([AX, AU], format='csc')
-        # RHS vector of the equality (first row is special because of initial condition)
-        beq = np.vstack([Ad @ x0 + gd] + [gd]*(N-1)).ravel()
 
         # 6.2) Friction Constraints
         rows, cols, vals = [], [], []
@@ -156,19 +144,9 @@ class Locomotion_MPC:
         # CasAdi constraint A matrix
         A_dm = scipy_to_casadi_csc(A)
 
-        # 7) Stop the build timer
-        t1 = time.perf_counter()
-        t_build = t1 - t0
-
-        # 8) Print the time used
-        # print(f"[MATRIX BUILDER] duration = {t_build*1e3:.3f} ms")
-
         return H, A_dm
     
     def _update_sparse_matrix(self, go2:PinGo2Model, traj: ReferenceTraj):
-
-        # 0) Start build time timer
-        t0 = time.perf_counter()
 
         # 1) System Constants
         nx, nu = 12, 12 # State and Input size
@@ -277,13 +255,6 @@ class Locomotion_MPC:
         l_dm = ca.DM(lb)
         u_dm = ca.DM(ub)
 
-        # 7) Stop the build timer
-        t1 = time.perf_counter()
-        t_build = t1 - t0
-
-        # 8) Print the time used
-        # print(f"[MATRIX BUILDER] duration = {t_build*1e3:.3f} ms")
-
         return g, A_dm, l_dm, u_dm
 
 
@@ -313,11 +284,11 @@ class Locomotion_MPC:
 
         opts = {
             "osqp": {
-                "eps_abs": 1e-5,
-                "eps_rel": 1e-5,
+                "eps_abs": 1e-4,
+                "eps_rel": 1e-4,
                 "max_iter": 10000,
                 "polish": False,
-                "verbose": True,
+                "verbose": False,
                 "scaling": 10,
                 "scaled_termination": True
             }
