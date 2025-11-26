@@ -81,7 +81,7 @@ Together, these libraries form the computational backbone of the control and sim
 ## Installation and Dependencies
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/elijah-waichong-chan/simpleMPC-unitree-go2.git
+git clone https://github.com/elijah-waichong-chan/ConvexMPC-unitree-go2.git
 cd simpleMPC-unitree-go2
 ```
 
