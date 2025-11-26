@@ -27,6 +27,11 @@ The controller achieves the following performance in MuJoCo simulation using the
 - **Forward speed:** up to **0.8 m/s**
 - **Backward speed:** up to **0.8 m/s**
 - **Lateral (sideways) speed:** up to **0.4 m/s**
+<p align="center">
+  <img src="media/forward_walking.gif" width="300">
+  <img src="media/side_walking.gif" width="300">
+</p>
+
 
 ### 🔄 Rotational Motion
 - **Yaw rotational speed:** up to **4.0 rad/s**
@@ -34,7 +39,7 @@ The controller achieves the following performance in MuJoCo simulation using the
 
 
 ### 🐾 Supported Gaits
-- Trot gait (default: tested at 3.0 Hz with 0.6 duty cycle)
+- Trot gait (tested at 3.0 Hz with 0.6 duty cycle)
 
 ## 🔧 Libraries Used
 
