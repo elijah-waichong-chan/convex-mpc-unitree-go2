@@ -152,7 +152,7 @@ def plot_mpc_result(t_vec, force, tau, x_vec, block):
     axis.step(t_vec, x_vec[0, :], label='x-position')
     axis.step(t_vec, x_vec[1, :], label='y-position')
     axis.step(t_vec, x_vec[2, :], label='z-position')
-    axis.set_title("CoM Position")
+    axis.set_title("CoM Position in World Frame (m)")
     axis.legend()
     axis.grid(True)
 
@@ -160,7 +160,7 @@ def plot_mpc_result(t_vec, force, tau, x_vec, block):
     axis.step(t_vec, x_vec[3, :], label='roll')
     axis.step(t_vec, x_vec[4, :], label='pitch')
     axis.step(t_vec, x_vec[5, :], label='yaw')
-    axis.set_title("Base Orientation")
+    axis.set_title("ZYX Euler (rad)")
     axis.legend()
     axis.grid(True)
 
@@ -168,7 +168,7 @@ def plot_mpc_result(t_vec, force, tau, x_vec, block):
     axis.step(t_vec, x_vec[6, :], label='x-velocity')
     axis.step(t_vec, x_vec[7, :], label='y-velocity')
     axis.step(t_vec, x_vec[8, :], label='z-velocity')
-    axis.set_title("CoM Velocity")
+    axis.set_title("CoM Velocity in World Frame (m/s)")
     axis.legend()
     axis.grid(True)
 
@@ -176,7 +176,7 @@ def plot_mpc_result(t_vec, force, tau, x_vec, block):
     axis.step(t_vec, x_vec[9, :], label='roll rate')
     axis.step(t_vec, x_vec[10, :], label='pitch rate')
     axis.step(t_vec, x_vec[11, :], label='yaw rate')
-    axis.set_title("Base Angular Velocity")
+    axis.set_title("Angular Velocity in World Frame")
     axis.legend()
     axis.grid(True)
 
@@ -184,29 +184,29 @@ def plot_mpc_result(t_vec, force, tau, x_vec, block):
     plt.pause(0.001)        # lets the GUI event loop breathe
 
 
-def plot_swing_foot_traj(t_vec, foot_pos_now, foot_pos_des, foot_vel_now, foot_vel_des, block):
+def plot_swing_foot_traj(t_vec, foot_traj, block):
 
     fig, axes = plt.subplots(2, 1, figsize=(15, 10), constrained_layout=True)
 
     plt.title("Left Front Foot Trajectory")
 
     axis = axes[0]
-    axis.plot(t_vec, foot_pos_now[0,:], color='r', label="Actual x-position")
-    axis.plot(t_vec, foot_pos_now[1,:], color='g', label="Actual y-position")
-    axis.plot(t_vec, foot_pos_now[2,:], color='b', label="Actual z-position")
-    axis.plot(t_vec, foot_pos_des[0,:], color='r', linestyle=':', linewidth=2.5, label="Desired x-position")
-    axis.plot(t_vec, foot_pos_des[1,:], color='g', linestyle=':', linewidth=2.5, label="Desired y-position")
-    axis.plot(t_vec, foot_pos_des[2,:], color='b', linestyle=':', linewidth=2.5, label="Desired z-position")
+    axis.plot(t_vec, foot_traj.pos_now[0,:], color='r', label="Actual x-position")
+    axis.plot(t_vec, foot_traj.pos_now[1,:], color='g', label="Actual y-position")
+    axis.plot(t_vec, foot_traj.pos_now[2,:], color='b', label="Actual z-position")
+    axis.plot(t_vec, foot_traj.pos_des[0,:], color='r', linestyle=':', linewidth=2.5, label="Desired x-position")
+    axis.plot(t_vec, foot_traj.pos_des[1,:], color='g', linestyle=':', linewidth=2.5, label="Desired y-position")
+    axis.plot(t_vec, foot_traj.pos_des[2,:], color='b', linestyle=':', linewidth=2.5, label="Desired z-position")
     axis.legend()
     axis.grid(True)
 
     axis = axes[1]
-    axis.plot(t_vec, foot_vel_now[0,:], color='r', label="Actual x-velocity")
-    axis.plot(t_vec, foot_vel_now[1,:], color='g', label="Actual y-velocity")
-    axis.plot(t_vec, foot_vel_now[2,:], color='b', label="Actual z-velocity")
-    axis.plot(t_vec, foot_vel_des[0,:], color='r', linestyle=':', label="Desired x-velocity")
-    axis.plot(t_vec, foot_vel_des[1,:], color='g', linestyle=':', label="Desired y-velocity")
-    axis.plot(t_vec, foot_vel_des[2,:], color='b', linestyle=':', label="Desired z-velocity")
+    axis.plot(t_vec, foot_traj.vel_now[0,:], color='r', label="Actual x-velocity")
+    axis.plot(t_vec, foot_traj.vel_now[1,:], color='g', label="Actual y-velocity")
+    axis.plot(t_vec, foot_traj.vel_now[2,:], color='b', label="Actual z-velocity")
+    axis.plot(t_vec, foot_traj.vel_des[0,:], color='r', linestyle=':', label="Desired x-velocity")
+    axis.plot(t_vec, foot_traj.vel_des[1,:], color='g', linestyle=':', label="Desired y-velocity")
+    axis.plot(t_vec, foot_traj.vel_des[2,:], color='b', linestyle=':', label="Desired z-velocity")
     axis.legend()
     axis.grid(True)
 
