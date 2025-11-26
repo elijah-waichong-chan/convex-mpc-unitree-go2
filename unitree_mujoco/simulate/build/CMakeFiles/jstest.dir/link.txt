@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -O3 -DNDEBUG -fPIC CMakeFiles/jstest.dir/src/joystick/jstest.cc.o CMakeFiles/jstest.dir/src/joystick/joystick.cc.o -o jstest 

@@ -1,4 +1,0 @@
-/home/elijah/unitree_mujoco/simulate/build/CMakeFiles/unitree_mujoco.dir
-/home/elijah/unitree_mujoco/simulate/build/CMakeFiles/jstest.dir
-/home/elijah/unitree_mujoco/simulate/build/CMakeFiles/edit_cache.dir
-/home/elijah/unitree_mujoco/simulate/build/CMakeFiles/rebuild_cache.dir
