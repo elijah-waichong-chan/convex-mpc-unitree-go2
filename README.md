@@ -41,6 +41,26 @@ The controller achieves the following performance in MuJoCo simulation using the
 ### 🐾 Supported Gaits
 - Trot gait (tested at 3.0 Hz with 0.6 duty cycle)
 
+## 🦿 Controller Overview
+
+Our motion control stack includes:
+
+- **Centroidal MPC (~30-50 Hz)**  
+Contact-force–based MPC implemented via **CasADi**, solving a convex QP each cycle. The prediction horizon spans one full gait cycle, divided into 16 time steps.
+
+- **Reference Trajectory Generator (~30-50 Hz)**  
+Generates centroidal trajectory for MPC based on user input
+
+- **Swing/Stance Leg Controller (1000 Hz)**  
+    - Swing-phase: PD foot trajectory tracking
+    - Stance-phase: joint torque computation to realize MPC contact forces
+
+- **Gait Scheduler and Foot Trajectory Generator (1000 Hz)**  
+    - Determines stance/swing timing
+    - Compute touchdown position for swing-foot using Raibert style foot placement method and - - Compute swing-leg trajectory using minimal jerk quintic polynomial with adjustable apex height
+
+---
+
 ## 🔧 Libraries Used
 
 - **MuJoCo** — fast, stable **physics simulation** used for testing locomotion, foot contacts, and dynamic behaviors.
@@ -57,7 +77,6 @@ Together, these libraries form the computational backbone of the control and sim
 
 ---
 
-```markdown
 ## Installation and Dependencies
 ### 1. Clone the repository
 ```bash
@@ -121,7 +140,7 @@ simpleMPC-unitree-go2/
 ```
 
 ### 5. Install MuJoCo
- ---
+MuJoCo 3.2.7, instruction to be added.
 
 ### 6. Install Pinocchio
 Pinocchio is required for kinematics, dynamics, and centroidal model computations.
@@ -138,26 +157,6 @@ Install via conda:
 ```bash
 conda install casadi -c conda-forge
 ```
-
-## 🦿 Controller Overview
-
-Our motion control stack includes:
-
-- **Centroidal MPC (~30-50 Hz)**  
-Contact-force–based MPC implemented via **CasADi**, solving a convex QP each cycle. The prediction horizon spans one full gait cycle, divided into 16 time steps.
-
-- **Reference Trajectory Generator (~30-50 Hz)**  
-Generates centroidal trajectory for MPC based on user input
-
-- **Swing/Stance Leg Controller (1000 Hz)**  
-    - Swing-phase: PD foot trajectory tracking
-    - Stance-phase: joint torque computation to realize MPC contact forces
-
-- **Gait Scheduler and Foot Trajectory Generator (1000 Hz)**  
-    - Determines stance/swing timing
-    - Compute touchdown position for swing-foot using Raibert style foot placement method and - - Compute swing-leg trajectory using minimal jerk quintic polynomial with adjustable apex height
-
----
 
 ## 🐍 Version Recommendation
 
