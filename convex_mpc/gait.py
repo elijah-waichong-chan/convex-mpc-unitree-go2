@@ -6,6 +6,7 @@ from go2_robot_data import PinGo2Model
 # --------------------------------------------------------------------------------
 
 PHASE_OFFSET = np.array([0.5, 0.0, 0.0, 0.5]).reshape(4)    # trotting gait
+HEIGHT_SWING = 0.1 # Height of the swing leg trajectory apex
 
 
 class Gait():
@@ -131,11 +132,11 @@ class Gait():
                                 + np.array(rotation_correction_term)
                                 )
         
-        pos_foot_traj_eval_at_world = self.make_swing_trajectory(foot_pos, pos_touchdown_world, t_swing, h_sw=0.1)
+        pos_foot_traj_eval_at_world = self.make_swing_trajectory(foot_pos, pos_touchdown_world, t_swing, h_sw=HEIGHT_SWING)
         return pos_foot_traj_eval_at_world, pos_touchdown_world
 
 
-    def make_swing_trajectory(self, p0, pf, t_swing, h_sw=0.0):
+    def make_swing_trajectory(self, p0, pf, t_swing, h_sw):
 
         p0 = np.asarray(p0, dtype=float)
         pf = np.asarray(pf, dtype=float)
