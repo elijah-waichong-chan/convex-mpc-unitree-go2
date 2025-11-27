@@ -1,16 +1,15 @@
 # MPC Locomotion Control of the Unitree Go2 Quadruped Robot in MuJoCo
 This repository implements a full **Convex Model Predictive Controller (MPC)** for the **Unitree Go2 quadruped robot**, including **contact-force optimization**, **centroidal dynamics**, and **MuJoCo simulation**.
 
-
 Developed as part of the **UC Berkeley Master of Engineering (MEng)** capstone project in Mechanical Engineering.
 
-As of 11/26/2025, the controller is capable of full 2D motion and yaw rotation
+*This repo is still under development and in early stage. Check Notes section below for current updates.
 
 ---
 
 ## 🐾 Introduction
 
-This repository contains a full implementation of a **Convex Model Predictive Controller (MPC)** for the Unitree Go2 quadruped robot.  
+This repository contains a full implementation of a **Convex Model Predictive Controller (MPC)** for the Unitree Go2 quadruped robot in MuJoCo simulation.
 
 The controller is designed following the methodology described in the MIT publication:
 
@@ -170,3 +169,15 @@ conda install casadi -c conda-forge
 - **MuJuCo:** `3.2.7`  
 
 ---
+
+## Notes
+11/26/2025:
+- The controller is capable of full 2D motion and yaw rotation.
+- The QP solve time for each MPC iteration are currently not capable of real-time control yet. This will be address in future updates with restructuring of the QP and more efficient matrix update.
+- To adjust the cost matrix, go to centroidal_mpc.py
+- To adjust the gait frequency and duty cycle, go to test_MPC.py
+- To adjust the friction coefficient, go to centroidal_mpc.py, remember to change MuJoCo setting too.
+- To adjust swing leg trajectory height, go to gait.py
+- To adjust gait(phase offset), go to gait.py
+- To adjust the desired motion, go to Trajectory Reference Setting in test_MPC.py
+- To run the simulation and see the plotted results, run test_MPC.py
