@@ -215,19 +215,43 @@ def plot_swing_foot_traj(t_vec, foot_traj, block):
     plt.show(block= block)   # shows both windows, doesn’t block
     plt.pause(0.001)        # lets the GUI event loop breathe
 
-def plot_solve_time(mpc_solve_time_s, MPC_DT, MPC_HZ, block):
-    plt.figure()
-    plt.plot(mpc_solve_time_s)
-    plt.axhline(y=MPC_DT * 1e3, color='r', linestyle='--',
-                linewidth=1.5, label=f'MPC update rate: {MPC_HZ} Hz ({MPC_DT*1e3} ms)')
-    plt.xlabel("MPC Iteration")
-    plt.ylabel("Time (ms)")
-    plt.title("QP Solve Time per Iteration")
+
+def plot_solve_time(mpc_solve_time_ms, mpc_compute_time_ms, MPC_DT, MPC_HZ, block):
+    fig, axis = plt.subplots(figsize=(10, 6))
+    mpc_solve_time_ms = np.asarray(mpc_solve_time_ms)
+    mpc_compute_time_ms = np.asarray(mpc_compute_time_ms)
+    total_time_ms  = mpc_solve_time_ms + mpc_compute_time_ms
+    avg_total_ms   = np.mean(total_time_ms)
+    avg_solve_ms   = np.mean(mpc_solve_time_ms)
+    avg_update_ms  = np.mean(mpc_compute_time_ms)
+    iters = np.arange(len(mpc_solve_time_ms))  
+    required_time_ms = MPC_DT * 1e3         
+
+    axis.set_xlabel("MPC Step", fontweight='bold')
+    axis.set_ylabel("Time (ms)", fontweight='bold')
+    axis.bar(iters, mpc_compute_time_ms, label='Model Update Time (ms)')
+    axis.bar(iters, mpc_solve_time_ms, bottom=mpc_compute_time_ms, label='QP Solve Time (ms)')
+    axis.axhline(required_time_ms, linestyle='--', linewidth=2.0,
+            label=f'Real-Time Budget {MPC_HZ} Hz ({required_time_ms:.1f} ms)')
+    axis.tick_params(axis='y')
+    axis.set_ylim(bottom=0)
+
+    text_str = (
+        f"Avg Model Update Time: {avg_update_ms:.2f} ms\n"
+        f"Avg QP solve time:  {avg_solve_ms:.2f} ms\n"
+        f"Avg MPC Cycle Time:  {avg_total_ms:.2f} ms"
+    )
+    axis.text(
+        0.02, 0.7, text_str,
+        transform=axis.transAxes,
+        va='center', ha='left',
+        bbox=dict(boxstyle="round", alpha=0.3)
+    )
+
+
+    plt.title("MPC Iteration Stats")
+    plt.tight_layout()
     plt.legend()
-    plt.grid(True)
-
-    plt.ylim(bottom=0)
-
     plt.show(block=block)
     plt.pause(0.001)
 
