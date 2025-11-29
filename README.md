@@ -48,13 +48,13 @@ The controller achieves the following performance in MuJoCo simulation using the
 Our motion control stack includes:
 
 - **Centroidal MPC (~30-50 Hz)**  
-Contact-force–based MPC implemented via **CasADi**, solving a convex QP each cycle. The prediction horizon spans one full gait cycle, divided into 16 time steps.
+Contact-force–based MPC implemented via **CasADi** using OSQP, solving a convex QP each cycle. The prediction horizon spans one full gait cycle, divided into 16 time steps.
 
 - **Reference Trajectory Generator (~30-50 Hz)**  
-Generates centroidal trajectory for MPC based on user input
+Generates centroidal trajectory for MPC based on user input.
 
 - **Swing/Stance Leg Controller (1000 Hz)**  
-    - Swing-phase: PD foot trajectory tracking
+    - Swing-phase: impedance control with foot trajectory and force tracking
     - Stance-phase: joint torque computation to realize MPC contact forces
 
 - **Gait Scheduler and Foot Trajectory Generator (1000 Hz)**  
