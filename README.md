@@ -3,7 +3,9 @@ This repository implements a full **Convex Model Predictive Controller (MPC)** f
 
 Developed as part of the **UC Berkeley Master of Engineering (MEng)** capstone project in Mechanical Engineering.
 
-*This repo is still under development and in early stage. Check Notes section below for current updates.
+*This repo is still under development and in early stage. Breaking changes are expected. APIs and file structure may change without notice.
+
+Check "Updates" section below for latest updates.
 
 ---
 
@@ -170,7 +172,13 @@ conda install casadi -c conda-forge
 
 ---
 
-## Notes
+## Updates
+
+11/28/2025:
+- Significantly faster model update and solving time per MPC iteration. Better matrix construction, implemented warm start, reduced redundant matrix update.
+- Updated solve time plot style
+- Updated motion demo in testMPC.py
+
 11/26/2025:
 - The controller is capable of full 2D motion and yaw rotation.
 - The QP solve time for each MPC iteration are currently not capable of real-time control yet. This will be address in future updates with restructuring of the QP and more efficient matrix update.
