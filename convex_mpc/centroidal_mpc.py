@@ -212,8 +212,25 @@ class CentroidalMPC:
         qp = {'h': self.H_sp, 'a': self.A_sp}
         self.solver = ca.conic('S', SOLVER_NAME, qp, OPTS)
 
+        # 4) Print Summary
+        nH_rows, nH_cols = self.H_const.size()
+        nA_rows, nA_cols = A_init.size()
+        H_sp = self.H_sp
+        A_sp = self.A_sp
+        nH_nnz = H_sp.nnz()
+        nA_nnz = A_sp.nnz()
+        nH_tot = nH_rows * nH_cols
+        nA_tot = nA_rows * nA_cols
+
         if verbose:
-            print(f"[QP BUILDER] Setup complete. A shape: {A_init.size()}")
+            print("\n[QP Init] ===== MPC QP Structure =====")
+            print(f"  H: {nH_rows:4d} x {nH_cols:<4d} | nnz = {nH_nnz:6d} | dens = {nH_nnz / nH_tot:7.4f}")
+            print(f"  A: {nA_rows:4d} x {nA_cols:<4d} | nnz = {nA_nnz:6d} | dens = {nA_nnz / nA_tot:7.4f}")
+            print(f"  vars: {nH_cols:d} | constr: {nA_rows:d} | horizon N = {self.N}")
+            print("[QP Init] ✓ Initialization complete.\n")
+
+
+
 
     def _update_sparse_matrix(self, traj: ComTraj):
         # 1) Get current model
