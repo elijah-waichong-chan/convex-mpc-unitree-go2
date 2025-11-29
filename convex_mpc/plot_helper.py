@@ -210,10 +210,8 @@ def plot_swing_foot_traj(t_vec, foot_traj, block):
     axis.legend()
     axis.grid(True)
 
-
-
-    plt.show(block= block)   # shows both windows, doesn’t block
-    plt.pause(0.001)        # lets the GUI event loop breathe
+    plt.show(block= block)
+    plt.pause(0.001)
 
 
 def plot_solve_time(mpc_solve_time_ms, mpc_compute_time_ms, MPC_DT, MPC_HZ, block):
@@ -247,7 +245,6 @@ def plot_solve_time(mpc_solve_time_ms, mpc_compute_time_ms, MPC_DT, MPC_HZ, bloc
         va='center', ha='left',
         bbox=dict(boxstyle="round", alpha=0.3)
     )
-
 
     plt.title("MPC Iteration Stats")
     plt.tight_layout()
@@ -306,3 +303,5 @@ def plot_full_traj(traj_ref, x_sim, block):
     plt.show(block=block)   # shows both windows, doesn’t block
     plt.pause(0.001)        # lets the GUI event loop breathe
 
+def hold_until_all_fig_closed():
+    plt.show()
