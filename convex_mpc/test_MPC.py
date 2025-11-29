@@ -19,7 +19,7 @@ from plot_helper import plot_mpc_result, plot_swing_foot_traj, plot_full_traj, p
 # Simulation Setting
 INITIAL_X_POS = -5                  # The initial x-position of the robot
 INITIAL_Y_POS = 0                   # The initial y-position of the robot
-RUN_SIM_LENGTH_S = 5                # Adjust this to change the duration of simulation in seconds
+RUN_SIM_LENGTH_S = 10                # Adjust this to change the duration of simulation in seconds
 RENDER_HZ = 120.0                   # Adjust this to change the replay redering rate
 RENDER_DT = 1.0 / RENDER_HZ         # Time step of the simulation replay
 REALTIME_FACTOR = 1                 # Adjust this to change the replay speed (1 = realtime)
@@ -31,7 +31,7 @@ GAIT_T = 1.0 / GAIT_HZ  # Peirod of the gait
 
 # Trajectory Reference Setting
 x_vel_des_body = 0         # Adjust this to change the desired forward velocity
-y_vel_des_body = 0.4           # Adjust this to change the desired lateral velocity
+y_vel_des_body = 0           # Adjust this to change the desired lateral velocity
 z_pos_des_body = 0.27        # Adjust this to change the desired height
 yaw_rate_des_body = 0       # Adjust this to change the desired roatation velocity
 
@@ -89,7 +89,8 @@ class FootTraj:
         vel_now = np.zeros((12, LEG_CTRL_I_END))
 foot_traj = FootTraj()
 
-mpc_solve_time_s = []     # Time takes to solve the MPC QP
+mpc_update_time_ms = []    # Time takes to update the MPC QP
+mpc_solve_time_ms = []      # Time takes to solve the MPC QP
 X_opt = []                # Optimal trajectory from the MPC
 U_opt = []                # Optimal contact force from the MPC
 
@@ -124,29 +125,29 @@ while leg_ctrl_i < LEG_CTRL_I_END:
 
     time_now_s = mujoco_go2.data.time   # Current time in simulation
 
-    # if(time_now_s) < 2:
-    #     x_vel_des_body = 0
-    #     y_vel_des_body = 0
-    #     z_pos_des_body = 0.27
-    #     yaw_rate_des_body = 0.3
+    if(time_now_s) < 2:
+        x_vel_des_body = 0
+        y_vel_des_body = 0
+        z_pos_des_body = 0.27
+        yaw_rate_des_body = 1
 
-    # elif(time_now_s) < 3:
-    #     x_vel_des_body = 0
-    #     y_vel_des_body = 0
-    #     z_pos_des_body = 0.27
-    #     yaw_rate_des_body = 0
+    elif(time_now_s) < 3:
+        x_vel_des_body = 0
+        y_vel_des_body = 0
+        z_pos_des_body = 0.27
+        yaw_rate_des_body = 0
 
-    # if(time_now_s) < 4:
-    #     x_vel_des_body = 0.5
-    #     y_vel_des_body = 0
-    #     z_pos_des_body = 0.27
-    #     yaw_rate_des_body = 0
+    elif(time_now_s) < 4:
+        x_vel_des_body = 0.5
+        y_vel_des_body = 0
+        z_pos_des_body = 0.27
+        yaw_rate_des_body = 0
 
-    # elif(time_now_s) < 6:
-    #     x_vel_des_body = 0
-    #     y_vel_des_body = 0
-    #     z_pos_des_body = 0.27
-    #     yaw_rate_des_body = 0
+    elif(time_now_s) < 6:
+        x_vel_des_body = 0
+        y_vel_des_body = 0
+        z_pos_des_body = 0.27
+        yaw_rate_des_body = 0
 
     # elif(time_now_s) < 5:
     #     x_vel_des = 0
@@ -183,7 +184,7 @@ while leg_ctrl_i < LEG_CTRL_I_END:
     x_vec[:, leg_ctrl_i] = go2.compute_com_x_vec().reshape(-1)
 
     # 2) Log current robot configuration in MuJoCo
-    time_log_s[leg_ctrl_i]    = time_now_s
+    time_log_s[leg_ctrl_i] = time_now_s
     q_log[leg_ctrl_i, :] = mujoco_go2.data.qpos
     # ------------------------------
 
@@ -198,8 +199,9 @@ while leg_ctrl_i < LEG_CTRL_I_END:
                                 time_step=MPC_DT)
         
         # 3.2) Solve the QP with the latest states
-        sol = mpc.solve_QP(go2, traj)
-        mpc_solve_time_s.append(mpc.solve_time)
+        sol = mpc.solve_QP(go2, traj, False)
+        mpc_solve_time_ms.append(mpc.solve_time)
+        mpc_update_time_ms.append(mpc.update_time)
 
         # 3.3) Retrieve results
         N = traj.N
@@ -261,17 +263,17 @@ print(f"Simulation ended. Duration: {sim_end_time - sim_start_time}s")
 # Plot results
 t_vec = np.arange(LEG_CTRL_I_END) * LEG_CTRL_DT
 plot_mpc_result(t_vec, mpc_force_world, tau_cmd, x_vec, block=False)
-plot_swing_foot_traj(t_vec, foot_traj, False)
-plot_solve_time(mpc_solve_time_s, MPC_DT, MPC_HZ, False)
+plot_solve_time(mpc_solve_time_ms, mpc_update_time_ms, MPC_DT, MPC_HZ, True)
+# plot_swing_foot_traj(t_vec, foot_traj, False)
 
-# Replay simulation
+# # Replay simulation
 mujoco_go2.replay_simulation(time_log_s, q_log, tau_log_Nm, RENDER_DT, REALTIME_FACTOR)
 
-# # # # # 5) Run simulation with optimal input
-x0_col = go2.compute_com_x_vec()
-traj_ref = np.hstack([x0_col, traj.compute_x_ref_vec()])
-traj_act = np.hstack([x0_col, X_opt])
-plot_full_traj(traj_act, traj_ref, block=True)
+# # # # # # 5) Run simulation with optimal input
+# x0_col = go2.compute_com_x_vec()
+# traj_ref = np.hstack([x0_col, traj.compute_x_ref_vec()])
+# traj_act = np.hstack([x0_col, X_opt])
+# plot_full_traj(traj_act, traj_ref, block=True)
 
 # [x_now, x_sim] = go2.run_simulation(U_opt)
 # pos_traj_sim = x_sim[0:3, :]
