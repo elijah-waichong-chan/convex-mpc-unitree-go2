@@ -1,0 +1,4 @@
+{
+  "cmake.sourceDirectory": "${workspaceFolder}/convex_mpc/cpp",
+  "cmake.buildDirectory": "${workspaceFolder}/convex_mpc/cpp/build"
+}

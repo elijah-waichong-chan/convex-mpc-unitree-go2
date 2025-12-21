@@ -1,0 +1,15 @@
+name: convex_mpc_go2
+channels:
+  - conda-forge
+dependencies:
+  # Build tools
+  - cmake
+  - ninja
+  - pkg-config
+
+  # Compiler toolchain
+  - cxx-compiler
+
+  # Core libs
+  - casadi=3.6.7
+  - eigen
