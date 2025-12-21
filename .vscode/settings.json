@@ -1,4 +1,16 @@
 {
   "cmake.sourceDirectory": "${workspaceFolder}/convex_mpc/cpp",
-  "cmake.buildDirectory": "${workspaceFolder}/convex_mpc/cpp/build"
+  "cmake.buildDirectory": "${workspaceFolder}/convex_mpc/cpp/build",
+
+  "cmake.configureSettings": {
+    "CMAKE_PREFIX_PATH": "${env:CONDA_PREFIX}"
+  },
+
+  "cmake.exportCompileCommands": true,
+
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
+  "cmake.configureEnvironment": {
+    "ACADOS_SOURCE_DIR": "/home/elijah/convex-mpc-unitree-go2/third_party/acados"
+  }
 }
