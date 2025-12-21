@@ -53,11 +53,11 @@ Contact-force–based MPC implemented via **CasADi** using OSQP, solving a conve
 - **Reference Trajectory Generator (~30-50 Hz)**  
 Generates centroidal trajectory for MPC based on user input.
 
-- **Swing/Stance Leg Controller (1000 Hz)**  
+- **Swing/Stance Leg Controller (200 Hz)**  
     - Swing-phase: impedance control with foot trajectory and force tracking
     - Stance-phase: joint torque computation to realize MPC contact forces
 
-- **Gait Scheduler and Foot Trajectory Generator (1000 Hz)**  
+- **Gait Scheduler and Foot Trajectory Generator (200 Hz)**  
     - Determines stance/swing timing
     - Compute touchdown position for swing-foot using Raibert style foot placement method and - - Compute swing-leg trajectory using minimal jerk quintic polynomial with adjustable apex height
 
