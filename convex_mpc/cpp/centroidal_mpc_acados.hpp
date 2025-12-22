@@ -20,8 +20,7 @@ public:
   static constexpr int ny = nx + nu;
 
   // Constructor & Destructor
-  explicit CentroidalMpcAcados(int N_horizon = 20);
-  CentroidalMpcAcados();
+  explicit CentroidalMpcAcados();
   ~CentroidalMpcAcados();
   CentroidalMpcAcados(const CentroidalMpcAcados&) = delete;
   CentroidalMpcAcados& operator=(const CentroidalMpcAcados&) = delete;
