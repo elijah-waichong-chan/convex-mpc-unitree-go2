@@ -1,21 +1,18 @@
-#!/usr/bin/env python3
 import numpy as np
 import casadi as ca
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosModel
 
-
-def build_friction_D(nu: int, mu: float) -> np.ndarray:
+def build_friction_D(mu: float) -> np.ndarray:
     """
-    Build friction pyramid D so that h = D*u and we enforce:
-        fx - mu fz <= 0
-       -fx - mu fz <= 0
-        fy - mu fz <= 0
-       -fy - mu fz <= 0
-    per leg (4 legs) => 16 rows total, nu=12 layout:
-      [FLx, FLy, FLz, FRx, FRy, FRz, RLx, RLy, RLz, RRx, RRy, RRz]
+    Build friction pyramid constraint term D in h = D*u
+    Enforcing the following:
+        fx - mu*fz <= 0
+       -fx - mu*fz <= 0
+        fy - mu*fz <= 0
+       -fy - mu*fz <= 0
+    for all four foot
     """
-    assert nu == 12, "This helper assumes 4 legs * 3 forces = 12 inputs."
-    D = np.zeros((16, nu))
+    D = np.zeros((16, 12))
     r = 0
     for leg in range(4):
         j = 3 * leg
@@ -49,7 +46,6 @@ def make_ocp(nx: int, nu: int, N: int, dt: float, Q: np.ndarray, R: np.ndarray, 
 
     # -----------------------
     # Model: discrete linear, parametric A_k, B_k, g_d
-    # x_{k+1} = A_k x_k + B_k u_k + g_d
     # -----------------------
     model = AcadosModel()
     model.name = "centroidal_mpc_hpipm"
@@ -58,13 +54,13 @@ def make_ocp(nx: int, nu: int, N: int, dt: float, Q: np.ndarray, R: np.ndarray, 
     u = ca.SX.sym("u", nu)
 
     # Parameters p = [vec(A) ; vec(B) ; g_d]
-    # IMPORTANT: CasADi reshape is column-major. In C++/Python runtime, flatten with order='F'.
     npA = nx * nx
     npB = nx * nu
     npg = nx
     np_stage = npA + npB + npg
     p = ca.SX.sym("p", np_stage)
 
+    # Unpack parameters to dynamics matricies
     A = ca.reshape(p[0:npA], nx, nx)
     B = ca.reshape(p[npA:npA + npB], nx, nu)
     gd = p[npA + npB: npA + npB + npg]
@@ -84,9 +80,7 @@ def make_ocp(nx: int, nu: int, N: int, dt: float, Q: np.ndarray, R: np.ndarray, 
     ocp.dims.np = np_stage
 
     # -----------------------
-    # Cost: LINEAR_LS
-    # y = [x; u], yref_k = [x_ref_k; 0]
-    # terminal: y_e = x, yref_e = x_ref_N (or your last ref)
+    # Cost: Linear least squares
     # -----------------------
     ny = nx + nu
     ocp.cost.cost_type = "LINEAR_LS"
@@ -114,23 +108,23 @@ def make_ocp(nx: int, nu: int, N: int, dt: float, Q: np.ndarray, R: np.ndarray, 
 
     # -----------------------
     # Constraints
-    # 1) Fix x0 (update each tick by setting stage-0 lbx/ubx)
-    # 2) Box bounds on u (swing legs u=0, stance fz>=fz_min) set at runtime
-    # 3) Friction pyramid as general linear constraints D u <= ug (update ug per stage by contact)
+    # 1) Initial condition x0
+    # 2) Box bounds on u (swing legs u=0, stance fz>=fz_min)
+    # 3) Friction pyramid
     # -----------------------
     # (1) x0 bound at stage 0 only:
-    ocp.constraints.idxbx_0 = np.arange(nx, dtype=np.int64)
+    ocp.constraints.idxbx_0 = np.arange(nx)
     ocp.constraints.lbx_0 = np.zeros((nx,))
     ocp.constraints.ubx_0 = np.zeros((nx,))
 
     # (2) u bounds (enable bounds on all controls)
-    ocp.constraints.idxbu = np.arange(nu, dtype=np.int64)  # lbu <= u[idxbu] <= ubu :contentReference[oaicite:2]{index=2}
+    ocp.constraints.idxbu = np.arange(nu)  # lbu <= u[idxbu] <= ubu :contentReference[oaicite:2]{index=2}
     BIG = 1e8
     ocp.constraints.lbu = -BIG * np.ones((nu,))
     ocp.constraints.ubu =  BIG * np.ones((nu,))
 
-    # (3) General linear constraints: lg <= D u <= ug
-    Dmat = build_friction_D(nu=nu, mu=mu)
+    # (3) General linear constraints: lg <= D*u <= ug
+    Dmat = build_friction_D(mu=mu)
     ng = Dmat.shape[0]
     ocp.dims.ng = ng
     ocp.constraints.constr_type = "BGH"
@@ -171,7 +165,7 @@ def main():
     import numpy as np
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--N", type=int, default=20)
+    parser.add_argument("--N", type=int, default=16)
     parser.add_argument("--dt", type=float, default=0.02)
     parser.add_argument("--out", type=str, default=None)
     parser.add_argument("--json", type=str, default=None)

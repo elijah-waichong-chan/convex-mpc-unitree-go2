@@ -442,11 +442,7 @@ void centroidal_mpc_hpipm_acados_setup_nlp_in(centroidal_mpc_hpipm_solver_capsul
         cost_scaling[13] = 0.02;
         cost_scaling[14] = 0.02;
         cost_scaling[15] = 0.02;
-        cost_scaling[16] = 0.02;
-        cost_scaling[17] = 0.02;
-        cost_scaling[18] = 0.02;
-        cost_scaling[19] = 0.02;
-        cost_scaling[20] = 1;
+        cost_scaling[16] = 1;
         for (int i = 0; i <= N; i++)
         {
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "scaling", &cost_scaling[i]);

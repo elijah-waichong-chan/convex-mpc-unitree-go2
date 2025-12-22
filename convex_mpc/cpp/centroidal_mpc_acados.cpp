@@ -1,5 +1,5 @@
 #include "centroidal_mpc_acados.hpp"
-#include <cstring>   // std::memcpy
+#include <cstring>
 #include <iostream>
 
 CentroidalMpcAcados::CentroidalMpcAcados() {

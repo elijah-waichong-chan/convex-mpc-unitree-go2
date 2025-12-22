@@ -3703,7 +3703,7 @@
         "/home/elijah/miniconda3/envs/go2/include/python3.10"
     ],
     "dims": {
-        "N": 20,
+        "N": 16,
         "n_global_data": 0,
         "nbu": 12,
         "nbx": 0,
@@ -4154,7 +4154,7 @@
     "shared_lib_ext": ".so",
     "simulink_opts": null,
     "solver_options": {
-        "N_horizon": 20,
+        "N_horizon": 16,
         "Tsim": 0.02,
         "adaptive_levenberg_marquardt_lam": 5.0,
         "adaptive_levenberg_marquardt_mu0": 0.001,
@@ -4168,10 +4168,6 @@
         "collocation_type": "GAUSS_LEGENDRE",
         "cost_discretization": "EULER",
         "cost_scaling": [
-            0.02,
-            0.02,
-            0.02,
-            0.02,
             0.02,
             0.02,
             0.02,
@@ -4289,17 +4285,9 @@
             0.25999999999999995,
             0.27999999999999997,
             0.3,
-            0.32,
-            0.34,
-            0.36000000000000004,
-            0.38000000000000006,
-            0.4000000000000001
+            0.32
         ],
         "sim_method_jac_reuse": [
-            0,
-            0,
-            0,
-            0,
             0,
             0,
             0,
@@ -4335,17 +4323,9 @@
             4,
             4,
             4,
-            4,
-            4,
-            4,
-            4,
             4
         ],
         "sim_method_num_steps": [
-            1,
-            1,
-            1,
-            1,
             1,
             1,
             1,
@@ -4366,12 +4346,8 @@
         "solution_sens_qp_t_lam_min": 1e-09,
         "store_iterates": false,
         "tau_min": 0.0,
-        "tf": 0.4,
+        "tf": 0.32,
         "time_steps": [
-            0.02,
-            0.02,
-            0.02,
-            0.02,
             0.02,
             0.02,
             0.02,

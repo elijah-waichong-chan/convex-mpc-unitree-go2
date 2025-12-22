@@ -7,7 +7,7 @@
 extern "C" {
 #include "acados_solver_centroidal_mpc_hpipm.h"
 
-// These come from acados include/ (already in your generated-solver CMake)
+// These come from acados include/
 #include "acados/ocp_nlp/ocp_nlp_common.h"
 #include "acados_c/ocp_nlp_interface.h"
 }
@@ -19,15 +19,14 @@ public:
   static constexpr int np = 12 * 12 + 12 * 12 + 12; // A(144)+B(144)+x_ref(12)=300
   static constexpr int ny = nx + nu;
 
+  // Constructor & Destructor
   explicit CentroidalMpcAcados(int N_horizon = 20);
-
   CentroidalMpcAcados();
   ~CentroidalMpcAcados();
-
   CentroidalMpcAcados(const CentroidalMpcAcados&) = delete;
   CentroidalMpcAcados& operator=(const CentroidalMpcAcados&) = delete;
 
-  // ----- setters -----
+  // ---- Vairables Assignment Methods ----
   void set_x0(const std::array<double, nx>& x0);
 
   // p_k = [vec(A); vec(B); x_ref] with column-major vec() consistent with CasADi reshape
