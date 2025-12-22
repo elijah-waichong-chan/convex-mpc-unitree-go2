@@ -26,8 +26,7 @@ int main() {
     std::array<double, CentroidalMpcAcados::ny> yref{};
     // first 12 entries already 0, last 12 entries already 0
 
-    // Assume horizon 20 (matches your generator default); update all stages
-    constexpr int N = 20;
+    int N = mpc.horizon();
     for (int k = 0; k < N; ++k) {
       auto p = CentroidalMpcAcados::pack_p(A, B, xref);
       mpc.set_stage_params(k, p);
