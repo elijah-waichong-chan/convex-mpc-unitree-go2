@@ -8,8 +8,8 @@ from numpy import cos, sin
 # Model Setting
 # --------------------------------------------------------------------------------
 
-REPO = Path(__file__).resolve().parents[2]
-PACKAGE_DIRS = REPO / "third_party"
+REPO = Path(__file__).resolve().parents[3]
+PACKAGE_DIRS = REPO / "models" / "URDF"
 URDF_PATH = PACKAGE_DIRS / "go2_description" / "urdf" / "go2_description.urdf"
 
 class ConfigurationState:
