@@ -118,11 +118,6 @@ The figures below are generated from running **`examples/ex00_demo.py`**:
 #### MPC State, Force, and Torque Logs
 <p align="center"> <img src="media/mpc_state_force_logs.png" width="900"><br/> <sub> <b>Centroidal MPC logs.</b> Optimized ground reaction forces for all four feet, joint torques, center-of-mass position and velocity, ZYX Euler angles, and body angular velocities during a command-scheduled locomotion sequence. </sub> </p>
 
-## Version Requirements
-
-- **NumPy:** `>=1.24,<2.0`  
-
-
 ## Updates
 
 12/24/2025
