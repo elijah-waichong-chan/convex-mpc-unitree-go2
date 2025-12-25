@@ -63,15 +63,11 @@ Generates centroidal trajectory for MPC based on user input.
 
 ## Libraries Used
 
-- **MuJoCo**
-- **Pinocchio**
-  - forward kinematics  
-  - Jacobians  
-  - frame placements
-  - dynamics terms (M, C, g)
-  
-- **unitree_mujoco** — Unitree’s MuJoCo asset + URDF package 
-https://github.com/unitreerobotics/unitree_mujoco
+### Physics Simulation
+- **MuJoCo** — https://github.com/google-deepmind/mujoco *(tested: 3.2.7)*
+
+### Kinematics and Dynamics
+- **Pinocchio** — https://github.com/stack-of-tasks/pinocchio *(tested: 3.6.x)*
 
 ---
 
@@ -82,93 +78,32 @@ git clone https://github.com/elijah-waichong-chan/convex-mpc-unitree-go2.git
 cd convex-mpc-unitree-go2
 ```
 
-### 2. Create a Conda environment
+### 2. Create a Conda environment (Optional)
 ```bash
-conda create -n go2 python=3.10.15 -y
+conda create -n go2 python=3.10 -y
 conda activate go2
 ```
 
-### 3. Download & copy Unitree MuJoCo assets into the repo
-This project depends on the official Unitree MuJoCo models to run simulation.
-```bash
-git clone https://github.com/unitreerobotics/unitree_mujoco.git
-cp -r unitree_mujoco ./third_party/unitree_mujoco
-```
+### 3. Install Dependencies
 
-Your repo structure should now look like:
-```
-convex-mpc-unitree-go2/
-└── third_party/
-    └── unitree_mujoco/
-```
-
-Then update the GO2 foot friction in the MuJoCo model:
-#### 1.Open:
-```
-third_party/unitree_mujoco/unitree_robots_go2/go2.xml
-```
-#### 2. Go to line 33 (the contact/geom friction definition for the feet) and change it to:
-```xml
-friction="0.8 0.02 0.01"/>
-```
-
-### 4. Download & copy Unitree GO2 URDF into the repo
-
-The Pinocchio model requires the official GO2 URDF and its meshes.  
-Unitree provides them as a downloadable ZIP archive.
-
-Download the GO2 URDF package:
-
-```bash
-wget https://oss-global-cdn.unitree.com/static/Go2_URDF.zip
-unzip Go2_URDF.zip
-```
-
-Copy the GO2 URDF into the project:
-```bash
-cp -r Go2_URDF/go2_description ./third_party/unitree_go2_description
-```
-
-Your directory structure should now include:
-```
-convex-mpc-unitree-go2/
-└── third_party/
-    ├── unitree_mujoco/
-    └── unitree_go2_description/
-```
-
-### 5. Install MuJoCo
-MuJoCo 3.2.7, instruction to be added.
-
-### 6. Install Pinocchio
-Pinocchio is required for kinematics, dynamics, and centroidal model computations.
-
-Install via conda:
 ```bash
 conda install pinocchio -c conda-forge
-```
-
-### 7. Install CasAdi
-CasADi is used for building and solving the MPC optimization problems.
-
-Install via conda:
-```bash
 conda install casadi -c conda-forge
+pip install mujoco==3.2.7
 ```
 
-## Version Recommendation
+## Version Requirements
 
-- **Python:** `3.10.15`  
-- **CasADi:** `3.6.7`  
-- **NumPy:** `1.26.4`  
-- **SciPy:** `1.15.2`  
-- **Matplotlib:** `3.8.4`  
-- **Pinocchio:** `3.6.0`  
-- **MuJuCo:** `3.2.7`  
+- **NumPy:** `>=1.24,<2.0`  
+
 
 ---
 
 ## Updates
+
+12/24/2025
+- Added URDF and MJCF model to the repo.
+- Simplified installation steps, no longer need to download URDF models and unitree_mujoco library.
 
 12/21/2025
 - Reduced the overall controller loop from 1000 Hz → 200 Hz in preparation for real-time deployment; no observed performance degradation.
