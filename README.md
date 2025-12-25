@@ -170,6 +170,10 @@ conda install casadi -c conda-forge
 
 ## Updates
 
+12/21/2025
+- Reduced the overall controller loop from 1000 Hz → 200 Hz in preparation for real-time deployment; no observed performance degradation.
+- The MPC update rate remains ~30–50 Hz, depending on gait frequency.
+
 11/28/2025:
 - Significantly faster model update and solving time per MPC iteration. Better matrix construction, implemented warm start, reduced redundant matrix update.
 - Updated solve time plot style
