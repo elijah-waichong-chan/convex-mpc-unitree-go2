@@ -78,8 +78,8 @@ Generates centroidal trajectory for MPC based on user input.
 ## Installation and Dependencies
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/elijah-waichong-chan/convex-mpc-unitree-go2.git
-cd convex-mpc-unitree-go2
+git clone https://github.com/elijah-waichong-chan/go2-convex-mpc.git
+cd go2-convex-mpc
 ```
 
 ### 2. Create a Conda environment
@@ -88,12 +88,13 @@ conda env create -f environment.yml
 conda activate go2-convex-mpc
 ```
 
-### 3. Install the Python package
+If you see import errors (e.g., ModuleNotFoundError: convex_mpc) rerun:
+
 ```bash
 pip install -e .
 ```
 
-### 4. Quick check (Optional)
+### 3. Quick check (Optional)
 ```bash
 python - <<'PY'
 import mujoco, pinocchio, casadi, convex_mpc
