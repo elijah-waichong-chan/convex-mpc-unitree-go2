@@ -7,7 +7,7 @@ Developed as part of the **UC Berkeley Master of Engineering (MEng)** capstone p
 
 ---
 
-## 🐾 Introduction
+## Introduction
 
 This repository contains a full implementation of a **Convex Model Predictive Controller (MPC)** for the Unitree Go2 quadruped robot in MuJoCo simulation.
 
@@ -19,11 +19,11 @@ The controller is designed following the methodology described in the MIT public
 The objective of this project is to reproduce the main ideas presented in the paper — particularly the **contact-force MPC formulation**, convex optimization structure, and robust locomotion behavior—while integrating them into a modern, modular robotics control pipeline.
 
 ---
-## ⚡ Locomotion Capabilities
+## Locomotion Capabilities
 
 The controller achieves the following performance in MuJoCo simulation using the convex MPC + leg controller pipeline:
 
-### 🏃 Linear Motion
+### Linear Motion
 - **Forward speed:** up to **0.8 m/s**
 - **Backward speed:** up to **0.8 m/s**
 - **Lateral (sideways) speed:** up to **0.4 m/s**
@@ -33,15 +33,15 @@ The controller achieves the following performance in MuJoCo simulation using the
 </p>
 
 
-### 🔄 Rotational Motion
+### Rotational Motion
 - **Yaw rotational speed:** up to **4.0 rad/s**
 <p align="center"> <img src="media/yaw_rotation.gif" width="600"> </p>
 
 
-### 🐾 Supported Gaits
+### Supported Gaits
 - Trot gait (tested at 3.0 Hz with 0.6 duty cycle)
 
-## 🦿 Controller Overview
+## Controller Overview
 
 Our motion control stack includes:
 
@@ -61,19 +61,17 @@ Generates centroidal trajectory for MPC based on user input.
 
 ---
 
-## 🔧 Libraries Used
+## Libraries Used
 
-- **MuJoCo** — fast, stable **physics simulation** used for testing locomotion, foot contacts, and dynamic behaviors.
-- **Pinocchio** — efficient **kinematics and dynamics library** for:
+- **MuJoCo**
+- **Pinocchio**
   - forward kinematics  
   - Jacobians  
   - frame placements
   - dynamics terms (M, C, g)
-
+  
 - **unitree_mujoco** — Unitree’s MuJoCo asset + URDF package 
 https://github.com/unitreerobotics/unitree_mujoco
-
-Together, these libraries form the computational backbone of the control and simulation environment.
 
 ---
 
@@ -158,7 +156,7 @@ Install via conda:
 conda install casadi -c conda-forge
 ```
 
-## 🐍 Version Recommendation
+## Version Recommendation
 
 - **Python:** `3.10.15`  
 - **CasADi:** `3.6.7`  
