@@ -1,3 +1,10 @@
 /third_party/
 /src/python/convex_mpc/__pycache__
 
+*.egg-info/
+dist/
+build/
+
+
+__pycache__/
+*.pyc
