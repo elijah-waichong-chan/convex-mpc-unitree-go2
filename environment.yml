@@ -1,0 +1,21 @@
+name: go2-convex-mpc
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy>=1.26,<2.0
+  - scipy
+  - matplotlib
+
+  # robotics / optimization
+  - pinocchio
+  - casadi
+
+  # MuJoCo viewer deps (helps on Linux)
+  - glfw
+  - pyopengl
+
+  - pip
+  - pip:
+      - mujoco==3.2.7
+      - -e .
