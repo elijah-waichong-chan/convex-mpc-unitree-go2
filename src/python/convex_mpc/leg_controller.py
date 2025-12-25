@@ -1,6 +1,6 @@
 import numpy as np
-from go2_robot_data import PinGo2Model
-from gait import Gait
+from .go2_robot_data import PinGo2Model
+from .gait import Gait
 from dataclasses import dataclass
 
 # --------------------------------------------------------------------------------

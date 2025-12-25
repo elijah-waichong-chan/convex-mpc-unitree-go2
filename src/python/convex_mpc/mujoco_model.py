@@ -3,7 +3,7 @@ import mujoco.viewer
 import numpy as np
 from pathlib import Path
 import time
-from go2_robot_data import PinGo2Model
+from .go2_robot_data import PinGo2Model
 import mujoco.viewer as mjv
 import pinocchio as pin
 
