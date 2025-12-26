@@ -1,13 +1,11 @@
 # MPC Locomotion Control of the Unitree Go2 Quadruped Robot in MuJoCo
-This repository implements a full **Convex Model Predictive Controller (MPC)** for the **Unitree Go2 quadruped robot**, including **contact-force optimization**, **centroidal dynamics**, and **MuJoCo simulation**.
+This repository implements a full **Convex Model Predictive Controller (MPC)** for the **Unitree Go2 quadruped robot**, including **contact-force optimization**, **centroidal dynamics**, and **MuJoCo simulation** using **linearized dynamics**.
 
 Developed as part of the **UC Berkeley Master of Engineering (MEng)** capstone project in Mechanical Engineering.
 
 > **Under development:** A C++ implementation targeting real-time performance is in progress. See the **Updates** section below for the latest status.
 
 ## Introduction
-
-This repository contains a full implementation of a **Convex Model Predictive Controller (MPC)** in MuJoCo simulation with a Unitree Go2 quadruped robot .
 
 The controller is designed following the methodology described in the following publication:
 
