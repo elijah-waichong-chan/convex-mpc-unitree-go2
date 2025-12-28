@@ -1,2 +1,0 @@
-/usr/bin/ar qc libacados_solver_centroidal_mpc_hpipm.a CMakeFiles/acados_solver_centroidal_mpc_hpipm.dir/acados_solver_centroidal_mpc_hpipm.c.o CMakeFiles/acados_solver_centroidal_mpc_hpipm.dir/centroidal_mpc_hpipm_model/centroidal_mpc_hpipm_dyn_disc_phi_fun.c.o CMakeFiles/acados_solver_centroidal_mpc_hpipm.dir/centroidal_mpc_hpipm_model/centroidal_mpc_hpipm_dyn_disc_phi_fun_jac.c.o
-/usr/bin/ranlib libacados_solver_centroidal_mpc_hpipm.a

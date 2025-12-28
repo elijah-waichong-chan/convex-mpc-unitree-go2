@@ -1,6 +1,0 @@
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/CMakeFiles/convex_mpc_go2.dir
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/CMakeFiles/edit_cache.dir
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/CMakeFiles/rebuild_cache.dir
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/c_generated_code/centroidal_mpc_hpipm/CMakeFiles/acados_solver_centroidal_mpc_hpipm.dir
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/c_generated_code/centroidal_mpc_hpipm/CMakeFiles/edit_cache.dir
-/home/elijah/convex-mpc-unitree-go2/convex_mpc/cpp/build/c_generated_code/centroidal_mpc_hpipm/CMakeFiles/rebuild_cache.dir
