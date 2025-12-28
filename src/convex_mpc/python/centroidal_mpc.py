@@ -1,8 +1,8 @@
 import casadi as ca
 import numpy as np
 import scipy.sparse as sp
-from com_trajectory import ComTraj
-from go2_robot_data import PinGo2Model
+from .com_trajectory import ComTraj
+from .go2_robot_data import PinGo2Model
 import time
 
 # --------------------------------------------------------------------------------

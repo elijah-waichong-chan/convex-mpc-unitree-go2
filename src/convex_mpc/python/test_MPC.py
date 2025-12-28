@@ -1,3 +1,21 @@
+"""
+Demo 00: Command-scheduled walking + turning (mixed body velocity commands)
+
+  0-1.0 s   : walk forward at 0.7 m/s
+  1.0-1.5 s : come to a stop (zero velocity)
+  1.5-3.0 s : sidestep at 0.3 m/s
+  3.0-4.0 s : stop
+  4.0-6.0 s : turn in place at 2.0 rad/s
+  6.0-6.5 s : stop
+  6.5-8.0 s : walk forward (0.6 m/s) while turning (2.0 rad/s)
+  8.0-9.0 s : speed up forward to 0.8 m/s (no turning)
+  9.0-10 s  : stop
+
+All phases maintain a constant base height reference of 0.27 m. This demo is
+meant to showcase smooth transitions between different motion primitives
+(forward, lateral, in-place yaw, and combined walk+turn) using a single
+piecewise-constant command schedule.
+"""
 import os
 os.environ["MPLBACKEND"] = "TkAgg"
 import time
@@ -5,15 +23,13 @@ import mujoco as mj
 import numpy as np
 from dataclasses import dataclass, field
 
-from go2_robot_data import PinGo2Model
-from mujoco_model import MuJoCo_GO2_Model
-from com_trajectory import ComTraj
-from centroidal_mpc import CentroidalMPC
-from leg_controller import LegController
-from gait import Gait
-
-
-from plot_helper import plot_mpc_result, plot_swing_foot_traj, plot_full_traj, plot_solve_time, hold_until_all_fig_closed
+from convex_mpc.go2_robot_data import PinGo2Model
+from convex_mpc.mujoco_model import MuJoCo_GO2_Model
+from convex_mpc.com_trajectory import ComTraj
+from convex_mpc.centroidal_mpc import CentroidalMPC
+from convex_mpc.leg_controller import LegController
+from convex_mpc.gait import Gait
+from convex_mpc.plot_helper import plot_mpc_result, plot_swing_foot_traj, plot_solve_time, hold_until_all_fig_closed
 
 # --------------------------------------------------------------------------------
 # Parameters
@@ -38,6 +54,9 @@ class BodyCmdPhase:
     z_pos: float
     yaw_rate: float
 
+# Command format:
+#   [start_time (s), end_time (s), x_velocity (m/s), y_velocity (m/s),
+#    z_position (m), yaw_angular_velocity (rad/s)]
 CMD_SCHEDULE = [
 BodyCmdPhase(0.0, 1.0,  0.7, 0.0, 0.27, 0.0),   # Forward 0.7 m/s
 BodyCmdPhase(1.0, 1.5,  0.0, 0.0, 0.27, 0.0),   # Stop
@@ -66,7 +85,7 @@ SIM_HZ = 1000
 SIM_DT = 1.0 / SIM_HZ
 
 #Leg Coontroller Update Rate
-CTRL_HZ = 200
+CTRL_HZ = 200       # 200 Hz
 CTRL_DT = 1.0 / CTRL_HZ
 
 # Must be an integer ratio for clean decimation
@@ -183,7 +202,7 @@ mpc = CentroidalMPC(go2, traj)
 U_opt = np.zeros((12, traj.N), dtype=float)
 
 # --------------------------------------------------------------------------------
-# Replay logs sampled at RENDER_HZ (smooth)
+# Replay logs sampled at RENDER_HZ
 # --------------------------------------------------------------------------------
 time_log_render = []
 q_log_render = []
@@ -203,12 +222,12 @@ tau_hold = np.zeros(12, dtype=float)
 for k in range(SIM_STEPS):
     time_now_s = float(mujoco_go2.data.time)
 
-    # --- Control update at CTRL_HZ (decimated) ---
+    # Control update at CTRL_HZ
     if (k % CTRL_DECIM) == 0 and ctrl_i < CTRL_STEPS:
         # Commands (updated at control rate)
         x_vel_des_body, y_vel_des_body, z_pos_des_body, yaw_rate_des_body = get_body_cmd(time_now_s)
 
-        # Update Pinocchio from current MuJoCo state (control-rate)
+        # Update Pinocchio from current MuJoCo state
         mujoco_go2.update_pin_with_mujoco(go2)
 
         x_vec[:, ctrl_i] = go2.compute_com_x_vec().reshape(-1)
@@ -216,9 +235,8 @@ for k in range(SIM_STEPS):
         # Control-rate logs
         time_log_ctrl_s[ctrl_i] = time_now_s
         q_log_ctrl[ctrl_i, :] = mujoco_go2.data.qpos
-        # tau_log_ctrl_Nm filled after we compute tau_hold
 
-        # Update MPC if needed (based on control ticks)
+        # Update MPC if needed
         if (ctrl_i % STEPS_PER_MPC) == 0:
             print(f"\rSimulation Time: {time_now_s:.3f} s", end="", flush=True)
 
@@ -245,7 +263,7 @@ for k in range(SIM_STEPS):
         # Extract first GRF from MPC
         mpc_force_world[:, ctrl_i] = U_opt[:, 0]
 
-        # Compute joint torques (control-rate)
+        # Compute joint torques
         FL = leg_controller.compute_leg_torque(
             "FL", go2, gait, mpc_force_world[LEG_SLICE["FL"], ctrl_i], time_now_s
         )
@@ -314,30 +332,16 @@ print(
 # Simulation Results
 # --------------------------------------------------------------------------------
 
-# Plot results (control-rate)
+# Plot results
 t_vec = np.arange(ctrl_i) * CTRL_DT
 plot_swing_foot_traj(t_vec, foot_traj, False)
 plot_mpc_result(t_vec, mpc_force_world, tau_cmd, x_vec, block=False)
 plot_solve_time(mpc_solve_time_ms, mpc_update_time_ms, MPC_DT, MPC_HZ, block=True)
 
-# Replay simulation (render-rate samples -> smooth)
+# Replay simulation
 time_log_render = np.asarray(time_log_render, dtype=float)
 q_log_render = np.asarray(q_log_render, dtype=float)
 tau_log_render = np.asarray(tau_log_render, dtype=float)
 
 mujoco_go2.replay_simulation(time_log_render, q_log_render, tau_log_render, RENDER_DT, REALTIME_FACTOR)
 hold_until_all_fig_closed()
-
-# Run simulation with optimal input
-# x0_col = go2.compute_com_x_vec()
-# traj_ref = np.hstack([x0_col, traj.compute_x_ref_vec()])
-# traj_act = np.hstack([x0_col, X_opt])
-# plot_full_traj(traj_act, traj_ref, block=True)
-
-# [x_now, x_sim] = go2.run_simulation(U_opt)
-# pos_traj_sim = x_sim[0:3, :]
-# pos_traj_opt = X_opt[0:3, :]
-# pos_traj_ref = np.hstack([x0_col[0:3, :], traj.compute_x_ref_vec()[0:3, :]])
-# plot_traj_tracking(pos_traj_ref, pos_traj_sim, block=True)
-# plot_traj_tracking(pos_traj_ref, pos_traj_opt, block=True)
-

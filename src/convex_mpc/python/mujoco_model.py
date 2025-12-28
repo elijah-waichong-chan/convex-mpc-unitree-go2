@@ -3,7 +3,7 @@ import mujoco.viewer
 import numpy as np
 from pathlib import Path
 import time
-from go2_robot_data import PinGo2Model
+from .go2_robot_data import PinGo2Model
 import mujoco.viewer as mjv
 import pinocchio as pin
 
@@ -11,8 +11,8 @@ import pinocchio as pin
 # MuJoCo Model Setting
 # --------------------------------------------------------------------------------
 
-REPO = Path(__file__).resolve().parents[2]
-XML_PATH = REPO / "third_party" / "unitree_mujoco" / "unitree_robots" / "go2" / "scene.xml"
+REPO = Path(__file__).resolve().parents[3]
+XML_PATH = REPO / "models" / "MJCF" / "go2" / "scene.xml"
 
 class MuJoCo_GO2_Model:
     def __init__(self):

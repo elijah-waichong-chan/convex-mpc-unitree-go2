@@ -1,6 +1,6 @@
 import numpy as np
-from go2_robot_data import PinGo2Model
-from gait import Gait
+from .go2_robot_data import PinGo2Model
+from .gait import Gait
 from numpy import cos, sin
 from scipy.signal import cont2discrete
 from scipy.linalg import expm

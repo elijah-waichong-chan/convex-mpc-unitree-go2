@@ -1,5 +1,5 @@
 import numpy as np
-from go2_robot_data import PinGo2Model
+from .go2_robot_data import PinGo2Model
 
 # --------------------------------------------------------------------------------
 # Gait Setting
